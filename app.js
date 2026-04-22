@@ -211,11 +211,37 @@ function saveFavs() { lsSet(STORE.FAVS, [...S.favs]); }
 function saveHist() { lsSet(STORE.HIST, S.history.slice(0, 80)); }
 
 // ══ API ══
+// CORS proxy fallback list
+const CORS_PROXIES = [
+  url => url, // direct (no proxy)
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`,
+];
+
 async function api(action, extra = '') {
   const url = `${S.host}/player_api.php?username=${S.user}&password=${S.pass}&action=${action}${extra}`;
-  const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+  
+  for (const makeUrl of CORS_PROXIES) {
+    try {
+      const r = await fetch(makeUrl(url), { 
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!r.ok) continue;
+      const data = await r.json();
+      return data;
+    } catch (e) {
+      continue;
+    }
+  }
+  throw new Error('Connection failed — check server URL and credentials');
+}
+
+// Also proxy stream URLs for playback
+function proxyUrl(url) {
+  // Don't proxy m3u8/mp4 streams directly — video element handles CORS natively
+  return url;
 }
 
 // ══ TABS ══
