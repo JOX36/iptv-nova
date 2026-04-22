@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#080c14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>IPTV Nova — Next Gen Player</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════ LOGIN SCREEN ═══════ -->
+<div id="loginScreen" class="screen active">
+  <div class="login-bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="login-container">
+    <div class="login-header">
+      <div class="login-icon">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect x="2" y="8" width="44" height="28" rx="4" stroke="url(#g1)" stroke-width="2.5"/>
+          <path d="M20 18l10 6-10 6V18z" fill="url(#g1)"/>
+          <rect x="16" y="40" width="16" height="3" rx="1.5" fill="url(#g1)" opacity=".5"/>
+          <rect x="20" y="43" width="8" height="2" rx="1" fill="url(#g1)" opacity=".3"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs>
+        </svg>
+      </div>
+      <h1 class="login-title">IPTV <span>Nova</span></h1>
+      <p class="login-sub">Next generation streaming experience</p>
+    </div>
+
+    <form id="loginForm" class="login-form" onsubmit="doLogin(event)">
+      <div class="input-group">
+        <label>Server URL</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414z"/></svg>
+          <input type="url" id="lHost" placeholder="http://server:8080" autocomplete="url" required>
+          <button type="button" class="input-action" onclick="pasteHost()" title="Pegar">📋</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Username</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+          <input type="text" id="lUser" placeholder="username" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>
+          <input type="password" id="lPass" placeholder="password" autocomplete="current-password" required>
+          <button type="button" class="input-action" id="togglePass" onclick="togglePassword()">👁</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" id="loginBtn">
+        <span class="btn-text">Connect</span>
+        <span class="btn-loader hidden"><div class="spinner-sm"></div></span>
+      </button>
+    </form>
+
+    <div class="saved-accounts" id="savedAccounts"></div>
+  </div>
+</div>
+
+<!-- ═══════ MAIN APP ═══════ -->
+<div id="appScreen" class="screen">
+  
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <svg class="brand-icon" viewBox="0 0 48 48" fill="none" width="28" height="28">
+        <rect x="2" y="8" width="44" height="28" rx="4" stroke="url(#g2)" stroke-width="2.5"/>
+        <path d="M20 18l10 6-10 6V18z" fill="url(#g2)"/>
+        <defs><linearGradient id="g2" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs>
+      </svg>
+      <span class="brand-name">Nova</span>
+    </div>
+    
+    <nav class="topbar-tabs" id="mainTabs">
+      <button class="tab-btn active" data-tab="live" onclick="switchTab('live')">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
+        Live
+      </button>
+      <button class="tab-btn" data-tab="vod" onclick="switchTab('vod')">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8H5v-2h10v2z"/></svg>
+        Movies
+      </button>
+      <button class="tab-btn" data-tab="series" onclick="switchTab('series')">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm14 0H4v2h12V6zM2 12a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2z"/></svg>
+        Series
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="search-box" id="searchWrap">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/></svg>
+        <input type="text" id="searchInput" placeholder="Search everything..." oninput="doSearch(this.value)">
+        <kbd id="searchKbd">/</kbd>
+      </div>
+      <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+      </button>
+      <div class="account-badge" id="accountBadge" onclick="toggleAccountMenu()">
+        <div class="account-avatar" id="accountAvatar">?</div>
+        <span class="account-name" id="accountName">—</span>
+        <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        <div class="account-dropdown" id="accountDropdown">
+          <div class="dropdown-label">Saved accounts</div>
+          <div id="accountList"></div>
+          <button class="dropdown-item add-account" onclick="logout()">⚙ Manage accounts</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- LOADING BAR -->
+  <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-tabs">
+          <button class="st active" data-st="categories" onclick="switchSidebarTab('categories')">Categories</button>
+          <button class="st" data-st="favorites" onclick="switchSidebarTab('favorites')">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            Favs
+          </button>
+          <button class="st" data-st="history" onclick="switchSidebarTab('history')">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+            Recent
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-content" id="sidebarContent"></div>
+      <div class="sidebar-footer">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content" id="content">
+      <!-- Player -->
+      <div class="player-section" id="playerSection">
+        <div class="player-container" id="playerContainer">
+          <video id="videoEl" playsinline></video>
+          <div class="player-overlay" id="playerOverlay">
+            <div class="player-placeholder">
+              <svg viewBox="0 0 80 80" fill="none" width="64" height="64">
+                <circle cx="40" cy="40" r="36" stroke="url(#g3)" stroke-width="2" stroke-dasharray="4 4"/>
+                <path d="M32 28l20 12-20 12V28z" fill="url(#g3)" opacity=".6"/>
+                <defs><linearGradient id="g3" x1="0" y1="0" x2="80" y2="80"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs>
+              </svg>
+              <p>Select content to start playing</p>
+            </div>
+            <div class="player-loading hidden" id="playerLoading">
+              <div class="spinner-ring"></div>
+              <span>Connecting...</span>
+            </div>
+          </div>
+          <!-- Channel sidebar in player -->
+          <div class="player-ch-panel hidden" id="playerChPanel">
+            <div class="pch-header">
+              <span>Channels</span>
+              <button onclick="closePlayerChPanel()">✕</button>
+            </div>
+            <input type="text" class="pch-search" placeholder="Filter..." oninput="filterPlayerChannels(this.value)">
+            <div class="pch-list" id="playerChList"></div>
+          </div>
+        </div>
+
+        <!-- Player Controls -->
+        <div class="player-controls" id="playerControls" style="display:none">
+          <div class="pc-top">
+            <div class="pc-info">
+              <img class="pc-logo" id="pcLogo" src="" alt="" onerror="this.style.display='none'">
+              <div class="pc-meta">
+                <div class="pc-name" id="pcName">—</div>
+                <div class="pc-group" id="pcGroup">—</div>
+              </div>
+            </div>
+            <div class="pc-status" id="pcStatus"></div>
+          </div>
+
+          <!-- EPG Bar -->
+          <div class="epg-bar" id="epgBar" style="display:none">
+            <div class="epg-current">
+              <span class="epg-live-badge">LIVE</span>
+              <span class="epg-current-title" id="epgCurrentTitle">—</span>
+              <span class="epg-time" id="epgTime"></span>
+            </div>
+            <div class="epg-progress-track"><div class="epg-progress-fill" id="epgProgressFill"></div></div>
+            <div class="epg-next" id="epgNext">—</div>
+          </div>
+
+          <!-- VOD Controls -->
+          <div class="vod-controls" id="vodControls" style="display:none">
+            <button class="vod-btn" onclick="vodSeek(-30)" title="-30s">⏮</button>
+            <button class="vod-btn" onclick="vodSeek(-10)" title="-10s">⏪</button>
+            <button class="vod-btn vod-btn-main" id="vodPlayBtn" onclick="vodTogglePlay()">⏸</button>
+            <button class="vod-btn" onclick="vodSeek(10)" title="+10s">⏩</button>
+            <button class="vod-btn" onclick="vodSeek(30)" title="+30s">⏭</button>
+            <span class="vod-time" id="vodCurrentTime">0:00</span>
+            <div class="vod-seek-wrap">
+              <input type="range" class="vod-seek" id="vodSeek" min="0" max="1000" value="0" oninput="vodSeekDrag(this)" onchange="vodSeekTo(this)">
+            </div>
+            <span class="vod-time" id="vodDuration">--:--</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pc-actions">
+            <button class="action-btn" id="btnChPanel" onclick="togglePlayerChPanel()" title="Channel list">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+              <span>Channels</span>
+            </button>
+            <button class="action-btn" id="btnEpg" onclick="openEpgModal()" title="EPG Guide" style="display:none">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/></svg>
+              <span>Guide</span>
+            </button>
+            <button class="action-btn" id="btnFav" onclick="toggleFav()" title="Favorite">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              <span>Fav</span>
+            </button>
+            <div class="action-dropdown">
+              <button class="action-btn" onclick="toggleDropdown('aspectDrop')" title="Aspect ratio">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/></svg>
+                <span>Aspect</span>
+              </button>
+              <div class="dropdown-menu" id="aspectDrop">
+                <button class="dropdown-option active" onclick="setAspect('contain')">Contain</button>
+                <button class="dropdown-option" onclick="setAspect('cover')">Crop</button>
+                <button class="dropdown-option" onclick="setAspect('fill')">Stretch</button>
+              </div>
+            </div>
+            <div class="action-dropdown">
+              <button class="action-btn" onclick="toggleDropdown('speedDrop')" title="Speed">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>
+                <span id="speedLabel">1×</span>
+              </button>
+              <div class="dropdown-menu" id="speedDrop">
+                <button class="dropdown-option" onclick="setSpeed(0.5)">0.5×</button>
+                <button class="dropdown-option" onclick="setSpeed(0.75)">0.75×</button>
+                <button class="dropdown-option active" onclick="setSpeed(1)">1× Normal</button>
+                <button class="dropdown-option" onclick="setSpeed(1.25)">1.25×</button>
+                <button class="dropdown-option" onclick="setSpeed(1.5)">1.5×</button>
+                <button class="dropdown-option" onclick="setSpeed(2)">2×</button>
+              </div>
+            </div>
+            <button class="action-btn" onclick="openExternal()" title="Open in external player">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+              <span>External</span>
+            </button>
+            <button class="action-btn" onclick="copyStreamUrl()" title="Copy URL">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
+              <span>Copy</span>
+            </button>
+            <button class="action-btn" onclick="toggleFullscreen()" title="Fullscreen">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 011.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13 0a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 011.414-1.414L15 13.586V12a1 1 0 011-1z"/></svg>
+              <span>Full</span>
+            </button>
+            <button class="action-btn" onclick="stopPlayer()" title="Stop">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"/></svg>
+              <span>Stop</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT GRID -->
+      <div class="content-body" id="contentBody">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">📡</div>
+          <h3>Select a category</h3>
+          <p>Choose from the sidebar to browse channels, movies, or series</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- EPG MODAL -->
+<div class="modal-overlay hidden" id="epgModal" onclick="if(event.target===this)closeEpgModal()">
+  <div class="modal epg-modal">
+    <div class="modal-header">
+      <h2>📺 <span id="epgModalTitle">Program Guide</span></h2>
+      <button class="modal-close" onclick="closeEpgModal()">✕</button>
+    </div>
+    <div class="modal-body" id="epgModalBody">
+      <div class="modal-loading"><div class="spinner-ring"></div><p>Loading guide...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SERIES MODAL -->
+<div class="modal-overlay hidden" id="seriesModal" onclick="if(event.target===this)closeSeriesModal()">
+  <div class="modal series-modal">
+    <div class="modal-header">
+      <div class="series-modal-info">
+        <img id="seriesModalCover" class="series-modal-cover" src="" alt="" onerror="this.style.display='none'">
+        <div>
+          <h2 id="seriesModalTitle">Series</h2>
+          <p id="seriesModalMeta" class="series-modal-meta"></p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeSeriesModal()">✕</button>
+    </div>
+    <div class="modal-body" id="seriesModalBody">
+      <div class="modal-loading"><div class="spinner-ring"></div><p>Loading seasons...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- VOD INFO MODAL -->
+<div class="modal-overlay hidden" id="vodModal" onclick="if(event.target===this)closeVodModal()">
+  <div class="modal vod-info-modal">
+    <button class="vod-modal-close" onclick="closeVodModal()">✕</button>
+    <div id="vodModalCover" class="vod-modal-cover"></div>
+    <div class="vod-modal-body">
+      <h2 id="vodModalTitle">—</h2>
+      <div id="vodModalMeta" class="vod-modal-meta"></div>
+      <p id="vodModalPlot" class="vod-modal-plot"></p>
+      <div class="vod-modal-actions">
+        <button class="btn-primary" onclick="playFromVodModal()">▶ Play</button>
+        <button class="btn-secondary" onclick="extFromVodModal()">📲 External</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FULLSCREEN CONTROLS -->
+<div class="fs-controls hidden" id="fsControls">
+  <button class="fs-btn" onclick="toggleFsChPanel()">☰</button>
+  <span class="fs-epg-text" id="fsEpgText"></span>
+  <button class="fs-btn" onclick="toggleFullscreen()">✕</button>
+</div>
+
+<div class="fs-ch-panel hidden" id="fsChPanel">
+  <div class="fs-ch-header">
+    <span>Channels</span>
+    <button onclick="closeFsChPanel()">✕</button>
+  </div>
+  <input type="text" class="pch-search" placeholder="Filter..." oninput="filterFsChannels(this.value)">
+  <div class="fs-ch-list" id="fsChList"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
