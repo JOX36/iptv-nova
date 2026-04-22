@@ -1,0 +1,16 @@
+{
+  "name": "IPTV Nova",
+  "short_name": "Nova",
+  "description": "Next generation IPTV streaming experience",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080c14",
+  "theme_color": "#080c14",
+  "orientation": "any",
+  "icons": [
+    { "src": "assets/icon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "assets/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "assets/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ],
+  "categories": ["entertainment", "multimedia"]
+}
